@@ -7,3 +7,4 @@ local.properties
 server/node_modules/
 server/.env
 server/devices.json
+server/releases/

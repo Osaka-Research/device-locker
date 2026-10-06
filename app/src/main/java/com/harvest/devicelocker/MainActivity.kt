@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var relockButton: Button
 
     private var pollJob: Job? = null
+    private var updateJob: Job? = null
     private var titleTapCount = 0
     private var locked = true
 
@@ -52,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_PIN = "admin_pin"
         private const val KEY_LOCKED = "locked"
         private const val POLL_INTERVAL_MS = 10_000L
+        private const val UPDATE_CHECK_INTERVAL_MS = 300_000L // 5 min
         private const val DEFAULT_PIN = "1234"
     }
 
@@ -120,11 +122,13 @@ class MainActivity : AppCompatActivity() {
 
         applyLockState(animate = false)
         startPolling()
+        if (isDeviceOwner()) startUpdateChecks()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         pollJob?.cancel()
+        updateJob?.cancel()
     }
 
     override fun onBackPressed() {
@@ -203,6 +207,19 @@ class MainActivity : AppCompatActivity() {
             statusText.text = "Synced with server"
             if (result != locked) {
                 setLocked(result)
+            }
+        }
+    }
+
+    private fun startUpdateChecks() {
+        updateJob?.cancel()
+        updateJob = lifecycleScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(UPDATE_CHECK_INTERVAL_MS)
+                val base = prefs.getString(KEY_SERVER_URL, "") ?: ""
+                if (base.isNotBlank()) {
+                    UpdateManager.checkAndInstall(this@MainActivity, base)
+                }
             }
         }
     }

@@ -1,10 +1,24 @@
 const fs = require("fs");
+const crypto = require("crypto");
 const path = require("path");
 const express = require("express");
 
 const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || "change-me-to-something-long-and-random";
 const DB_PATH = path.join(__dirname, "devices.json");
+const RELEASES_DIR = path.join(__dirname, "releases");
+const RELEASE_APK_PATH = path.join(RELEASES_DIR, "latest.apk");
+const RELEASE_INFO_PATH = path.join(RELEASES_DIR, "version.json");
+
+fs.mkdirSync(RELEASES_DIR, { recursive: true });
+
+function loadReleaseInfo() {
+  try {
+    return JSON.parse(fs.readFileSync(RELEASE_INFO_PATH, "utf8"));
+  } catch {
+    return null;
+  }
+}
 
 function loadDevices() {
   try {
@@ -61,6 +75,51 @@ app.post("/lock/:deviceId", requireAdmin, (req, res) => {
 
 app.get("/devices", requireAdmin, (req, res) => {
   res.json(loadDevices());
+});
+
+// Remote app update. Push a new build:
+//   curl -X POST "$SERVER/app/publish?versionCode=5" \
+//        -H "x-admin-key: $ADMIN_KEY" \
+//        -H "Content-Type: application/octet-stream" \
+//        --data-binary @app-debug.apk
+// Server computes the checksum itself (never trusts the caller for that),
+// so devices always verify against what's actually on disk.
+app.post(
+  "/app/publish",
+  requireAdmin,
+  express.raw({ type: "*/*", limit: "150mb" }),
+  (req, res) => {
+    const versionCode = parseInt(req.query.versionCode, 10);
+    if (!Number.isInteger(versionCode) || versionCode < 1) {
+      return res.status(400).json({ error: "pass ?versionCode=<positive integer>" });
+    }
+    if (!req.body || req.body.length === 0) {
+      return res.status(400).json({ error: "empty body - send the apk as raw binary" });
+    }
+    fs.writeFileSync(RELEASE_APK_PATH, req.body);
+    const sha256 = crypto.createHash("sha256").update(req.body).digest("base64");
+    const info = { versionCode, sha256, publishedAt: new Date().toISOString(), size: req.body.length };
+    fs.writeFileSync(RELEASE_INFO_PATH, JSON.stringify(info, null, 2));
+    res.json({ ok: true, ...info });
+  }
+);
+
+// Device polls this to see if a newer build is available. No auth, same
+// reasoning as /status - worst case a stranger learns the current version.
+app.get("/app/latest", (req, res) => {
+  const info = loadReleaseInfo();
+  if (!info) return res.status(404).json({ error: "no release published yet" });
+  res.json({
+    versionCode: info.versionCode,
+    sha256: info.sha256,
+    url: `${req.protocol}://${req.get("host")}/app/latest.apk`,
+  });
+});
+
+app.get("/app/latest.apk", (req, res) => {
+  if (!fs.existsSync(RELEASE_APK_PATH)) return res.status(404).end();
+  res.type("application/vnd.android.package-archive");
+  res.sendFile(RELEASE_APK_PATH);
 });
 
 // Tiny admin page: open in a browser, paste the admin key once, lock/unlock
