@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DEVICE LOCKED"
+        android:textColor="#FFFFFF"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Checking server..."
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/idText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text=""
+        android:textColor="#555555"
+        android:textSize="11sp" />
+
+    <LinearLayout
+        android:id="@+id/lockedGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <EditText
+            android:id="@+id/pinInput"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:hint="Admin PIN"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#777777"
+            android:gravity="center"
+            android:textSize="22sp"
+            android:inputType="numberPassword"
+            android:maxLength="12" />
+
+        <Button
+            android:id="@+id/unlockButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Unlock" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/unlockedGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device is unlocked. Use normally."
+            android:textColor="#88FF88"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/relockButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Re-lock now" />
+    </LinearLayout>
+
+</LinearLayout>
